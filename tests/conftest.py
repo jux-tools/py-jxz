@@ -17,7 +17,11 @@ if TYPE_CHECKING:
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
-from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.hazmat.primitives.serialization import (
+    Encoding,
+    NoEncryption,
+    PrivateFormat,
+)
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
 from jxz.builder import ContainerBuilder
@@ -284,4 +288,56 @@ def cert_file(tmp_path: Path, rsa_certificate: x509.Certificate) -> Path:
     """RSA certificate PEM file."""
     p = tmp_path / "cert.pem"
     p.write_bytes(rsa_certificate.public_bytes(Encoding.PEM))
+    return p
+
+
+@pytest.fixture()
+def sample_junit_xml_file(tmp_path: Path, sample_junit_xml: bytes) -> Path:
+    """JUnit XML report written to a temp file."""
+    p = tmp_path / "report.xml"
+    p.write_bytes(sample_junit_xml)
+    return p
+
+
+@pytest.fixture()
+def sample_attachment_file(tmp_path: Path, sample_attachment: bytes) -> Path:
+    """Attachment written to a temp file."""
+    p = tmp_path / "screenshot.png"
+    p.write_bytes(sample_attachment)
+    return p
+
+
+@pytest.fixture()
+def sample_meta_file(tmp_path: Path, sample_meta: bytes) -> Path:
+    """Metadata JSON written to a temp file."""
+    p = tmp_path / "pytest-metadata.json"
+    p.write_bytes(sample_meta)
+    return p
+
+
+@pytest.fixture()
+def rsa_key_file(tmp_path: Path, rsa_private_key: rsa.RSAPrivateKey) -> Path:
+    """RSA private key PEM file."""
+    p = tmp_path / "rsa.pem"
+    p.write_bytes(
+        rsa_private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+    )
+    return p
+
+
+@pytest.fixture()
+def ec_key_file(tmp_path: Path, ec_private_key: ec.EllipticCurvePrivateKey) -> Path:
+    """ECDSA private key PEM file."""
+    p = tmp_path / "ec.pem"
+    p.write_bytes(
+        ec_private_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption())
+    )
+    return p
+
+
+@pytest.fixture()
+def ec_cert_file(tmp_path: Path, ec_certificate: x509.Certificate) -> Path:
+    """ECDSA certificate PEM file."""
+    p = tmp_path / "ec_cert.pem"
+    p.write_bytes(ec_certificate.public_bytes(Encoding.PEM))
     return p

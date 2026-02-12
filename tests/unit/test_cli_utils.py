@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from jxz.__main__ import main
-from jxz.cli import _try_rich, format_size, load_certificate
+from jxz.cli import _try_rich, format_size, load_certificate, load_private_key
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -66,6 +66,36 @@ class TestLoadCertificate:
     def test_valid_certificate(self, cert_file: Path) -> None:
         cert = load_certificate(str(cert_file))
         assert cert is not None
+
+
+class TestLoadPrivateKey:
+    def test_missing_file(self, capsys: pytest.CaptureFixture[str]) -> None:
+        with pytest.raises(SystemExit):
+            load_private_key("/nonexistent/key.pem")
+        assert "not found" in capsys.readouterr().err
+
+    def test_invalid_pem(
+        self,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        bad_pem = tmp_path / "bad.pem"
+        bad_pem.write_text("not a private key")
+        with pytest.raises(SystemExit):
+            load_private_key(str(bad_pem))
+        assert "failed to load" in capsys.readouterr().err
+
+    def test_valid_rsa_key(self, rsa_key_file: Path) -> None:
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
+        key = load_private_key(str(rsa_key_file))
+        assert isinstance(key, rsa.RSAPrivateKey)
+
+    def test_valid_ec_key(self, ec_key_file: Path) -> None:
+        from cryptography.hazmat.primitives.asymmetric import ec
+
+        key = load_private_key(str(ec_key_file))
+        assert isinstance(key, ec.EllipticCurvePrivateKey)
 
 
 class TestMainNoCommand:

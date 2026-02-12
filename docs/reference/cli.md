@@ -3,7 +3,7 @@
 
 # CLI Reference
 
-Command-line interface for inspecting, verifying, and extracting `.jxz` containers.
+Command-line interface for building, inspecting, verifying, and extracting `.jxz` containers.
 
 ## Installation
 
@@ -30,6 +30,62 @@ jxz [--version] [--help] <command>
 |------|-------------|
 | `--version` | Show version and exit |
 | `--help`, `-h` | Show help and exit |
+
+---
+
+## `jxz build`
+
+Assemble a `.jxz` container from a JUnit XML report, optional attachments, and optional signing materials.
+
+```
+jxz build REPORT --created-by TEXT --report-type TYPE
+          [--attachment PATH[:TEST_ID]] ...
+          [--meta FILE] ...
+          [--key PEM] [--cert PEM]
+          [-o PATH] [--timestamp ISO8601]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `REPORT` | Path to JUnit XML report file |
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--created-by TEXT` | Tool identifier (e.g. `pytest-jux/0.1.0`) — **required** |
+| `--report-type TYPE` | Report dialect (e.g. `pytest-junit`) — **required** |
+| `--attachment PATH[:TEST_ID]` | Attachment file, repeatable. Optionally suffix `:TEST_ID` to set `Attachment-For` |
+| `--meta FILE` | File to add under `META-INF/`, repeatable |
+| `--key PEM` | Private key PEM file for signing (RSA or ECDSA, auto-detected) |
+| `--cert PEM` | Certificate PEM file (requires `--key`) |
+| `--output PATH`, `-o PATH` | Output path (default: `<report>.jxz`) |
+| `--timestamp ISO8601` | ISO 8601 timestamp (default: now UTC) |
+
+### Behavior
+
+- Reads the report file and all referenced attachments/meta files.
+- Builds the container in memory using `ContainerBuilder`.
+- If `--key` is provided, signs the manifest. If `--cert` is also provided, embeds the certificate in the signature.
+- Creates parent directories for the output path if needed.
+- Prints the resolved output path to stdout on success.
+
+### Output
+
+Prints the output file path to stdout:
+
+```
+/path/to/report.jxz
+```
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Container built successfully |
+| 1 | Missing file, invalid arguments, or build failure |
 
 ---
 

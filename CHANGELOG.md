@@ -10,8 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-02-12
+
 ### Added
 
+- `jxz build` CLI subcommand: assemble `.jxz` containers from the command line
+  - Required `--created-by` and `--report-type` flags
+  - Repeatable `--attachment PATH[:TEST_ID]` and `--meta FILE` flags
+  - `--key` and `--cert` flags for RSA/ECDSA signing
+  - `--timestamp` for reproducible builds, `-o` for custom output path
+  - Creates parent directories for output path automatically
+- `load_private_key()` CLI utility in `jxz.cli` (mirrors existing `load_certificate()`)
 - Diátaxis documentation framework populated with content:
   - Tutorial: getting-started walkthrough (build, read, sign, verify lifecycle)
   - How-to guides: build containers, verify containers, use the CLI

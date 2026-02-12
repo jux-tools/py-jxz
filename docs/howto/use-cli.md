@@ -3,7 +3,66 @@
 
 # How to Use the CLI
 
-Recipes for inspecting, verifying, and extracting `.jxz` containers from the command line.
+Recipes for building, inspecting, verifying, and extracting `.jxz` containers from the command line.
+
+## Build a container
+
+Create a basic unsigned container from a JUnit XML report:
+
+```bash
+jxz build report.xml --created-by "pytest-jux/0.1.0" --report-type pytest-junit
+```
+
+This produces `report.jxz` alongside the input file.
+
+## Build with attachments
+
+Attach files to the container. Use `PATH:TEST_ID` to associate an attachment with a specific test:
+
+```bash
+jxz build report.xml \
+    --created-by "pytest-jux/0.1.0" \
+    --report-type pytest-junit \
+    --attachment screenshot.png:test_login \
+    --attachment trace.json \
+    -o output/report.jxz
+```
+
+## Build a signed container
+
+Sign the container with a private key and certificate:
+
+```bash
+jxz build report.xml \
+    --created-by "pytest-jux/0.1.0" \
+    --report-type pytest-junit \
+    --key signer.pem \
+    --cert signer-cert.pem \
+    -o signed-report.jxz
+```
+
+## Build with metadata
+
+Add extra files under `META-INF/`:
+
+```bash
+jxz build report.xml \
+    --created-by "pytest-jux/0.1.0" \
+    --report-type pytest-junit \
+    --meta pytest-metadata.json \
+    --meta environment.json
+```
+
+## Build with a fixed timestamp
+
+Useful for reproducible builds in CI:
+
+```bash
+jxz build report.xml \
+    --created-by "ci-pipeline/2.0" \
+    --report-type pytest-junit \
+    --timestamp "2026-01-15T10:30:00+00:00"
+```
 
 ## Inspect a container
 
@@ -162,6 +221,7 @@ done
 If the `jxz` console script is not on your `PATH`, use the module form:
 
 ```bash
+python -m jxz build report.xml --created-by "tool/1.0" --report-type pytest-junit
 python -m jxz inspect report.jxz
 python -m jxz verify --json report.jxz
 python -m jxz extract -o output/ report.jxz
