@@ -20,7 +20,7 @@ py-jxz implements the `.jxz` container format in Python, providing:
 | `jxz.manifest` | Generate and parse JAR-style `MANIFEST.MF` | builder, reader |
 | `jxz.reader` | Extract, validate, and verify `.jxz` containers | py-juxlib, spooky |
 | `jxz.signing` | XMLDSIG signing and verification (enveloping mode) | builder, reader |
-| `jxz.cli` | CLI subcommands: inspect, verify, extract | end users, CI pipelines |
+| `jxz.cli` | CLI subcommands: build, inspect, verify, extract | end users, CI pipelines |
 
 ### Why a Separate Package
 
@@ -36,9 +36,9 @@ py-jxz                          <-- format implementation
 
 ## Current Development Status
 
-- **Completed Sprints**: Sprint 1 (core containers), Sprint 2 (XML signatures), Sprint 3 (API polish & CLI)
-- **Latest Release**: v0.1.3
-- **Next Milestone**: TBD (Sprint 4)
+- **Completed Sprints**: Sprint 1 (core containers), Sprint 2 (XML signatures), Sprint 3 (API polish & CLI), Sprint 4 (`jxz build` CLI & utilities)
+- **Latest Release**: v0.1.4
+- **Next Milestone**: TBD (Sprint 5)
 
 ## Foundational ADRs
 
@@ -57,7 +57,7 @@ This project follows [AI-Assisted Project Orchestration patterns](https://github
 - **Testing**: TDD with pytest, >85% coverage required
 - **Versioning**: Semantic versioning (0.x.x during development)
 - **Git Workflow**: Gitflow (main, develop, feature/*, release/*, hotfix/*)
-- **Documentation**: Diataxis framework
+- **Documentation**: Diátaxis framework (populated: tutorial, 3 how-to guides, 2 references, 1 explanation)
 - **Architecture**: C4 DSL models in `docs/architecture/`
 
 ## Quick Commands

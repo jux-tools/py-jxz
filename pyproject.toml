@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-jxz"
-version = "0.1.3"
+version = "0.1.4"
 description = "Python library for building, reading, and verifying .jxz signed containers"
 readme = "README.md"
 license = "Apache-2.0"
