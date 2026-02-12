@@ -8,12 +8,17 @@ from __future__ import annotations
 import io
 import zipfile
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import pytest
 
 from jxz.builder import ContainerBuilder
 from jxz.errors import ContainerStructureError, PathTraversalError
 from jxz.manifest import parse
+
+if TYPE_CHECKING:
+    from cryptography.hazmat.primitives.asymmetric import ec, rsa
+    from cryptography.x509 import Certificate
 
 
 class TestBuildMinimal:
@@ -198,3 +203,86 @@ class TestBuildIdempotent:
         result = builder.build(created_by="test/1.0", report_type="pytest-junit")
         with zipfile.ZipFile(io.BytesIO(result)) as zf:
             assert zf.read("junit.xml") == sample_junit_xml
+
+
+class TestBuildSigned:
+    def test_signed_container_has_signature(
+        self,
+        sample_junit_xml: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+        rsa_certificate: Certificate,
+    ) -> None:
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        result = builder.build(
+            created_by="test/1.0",
+            report_type="pytest-junit",
+            private_key=rsa_private_key,
+            certificate=rsa_certificate,
+        )
+        with zipfile.ZipFile(io.BytesIO(result)) as zf:
+            assert "META-INF/SIGNATURE.XML" in zf.namelist()
+
+    def test_unsigned_container_no_signature(self, sample_junit_xml: bytes) -> None:
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        result = builder.build(created_by="test/1.0", report_type="pytest-junit")
+        with zipfile.ZipFile(io.BytesIO(result)) as zf:
+            assert "META-INF/SIGNATURE.XML" not in zf.namelist()
+
+    def test_rsa_key_produces_signature(
+        self,
+        sample_junit_xml: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+    ) -> None:
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        result = builder.build(
+            created_by="test/1.0",
+            report_type="pytest-junit",
+            private_key=rsa_private_key,
+        )
+        with zipfile.ZipFile(io.BytesIO(result)) as zf:
+            sig = zf.read("META-INF/SIGNATURE.XML")
+        assert b"<ds:Signature" in sig or b"Signature" in sig
+
+    def test_ecdsa_key_produces_signature(
+        self,
+        sample_junit_xml: bytes,
+        ec_private_key: ec.EllipticCurvePrivateKey,
+        ec_certificate: Certificate,
+    ) -> None:
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        result = builder.build(
+            created_by="test/1.0",
+            report_type="pytest-junit",
+            private_key=ec_private_key,
+            certificate=ec_certificate,
+        )
+        with zipfile.ZipFile(io.BytesIO(result)) as zf:
+            assert "META-INF/SIGNATURE.XML" in zf.namelist()
+
+    def test_manifest_matches_signed_content(
+        self,
+        sample_junit_xml: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+        rsa_certificate: Certificate,
+    ) -> None:
+        """MANIFEST.MF in the ZIP is the same text that was signed."""
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        result = builder.build(
+            created_by="test/1.0",
+            report_type="pytest-junit",
+            private_key=rsa_private_key,
+            certificate=rsa_certificate,
+        )
+        with zipfile.ZipFile(io.BytesIO(result)) as zf:
+            manifest_text = zf.read("META-INF/MANIFEST.MF").decode("utf-8")
+            sig_xml = zf.read("META-INF/SIGNATURE.XML")
+
+        from jxz.signing import verify_signature
+
+        # Should not raise — manifest matches what was signed
+        verify_signature(sig_xml, manifest_text, rsa_certificate)

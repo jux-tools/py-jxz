@@ -8,9 +8,15 @@ from __future__ import annotations
 import io
 import zipfile
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from jxz.errors import ContainerStructureError, PathTraversalError
 from jxz.manifest import Manifest, compute_digest, generate
+
+if TYPE_CHECKING:
+    from cryptography.x509 import Certificate
+
+    from jxz.signing import PrivateKey
 
 
 def _check_path_traversal(name: str) -> None:
@@ -81,6 +87,8 @@ class ContainerBuilder:
         created_by: str,
         report_type: str,
         timestamp: datetime | None = None,
+        private_key: PrivateKey | None = None,
+        certificate: Certificate | None = None,
     ) -> bytes:
         """Build the .jxz container and return ZIP bytes.
 
@@ -88,12 +96,15 @@ class ContainerBuilder:
             created_by: Tool identifier (e.g. ``pytest-jux/0.1.0``).
             report_type: Report type (e.g. ``pytest-junit``).
             timestamp: Optional timestamp; defaults to now (UTC).
+            private_key: Optional RSA or ECDSA key for signing the manifest.
+            certificate: Optional X.509 certificate to embed in the signature.
 
         Returns:
             Complete .jxz container as bytes.
 
         Raises:
             ContainerStructureError: If no report has been set.
+            SignatureError: If signing fails.
         """
         if self._report is None:
             msg = "No report set; call set_report() before build()"
@@ -138,10 +149,19 @@ class ContainerBuilder:
         )
         manifest_text = generate(manifest)
 
+        # Sign manifest if a private key was provided
+        signature_xml: bytes | None = None
+        if private_key is not None:
+            from jxz.signing import sign_manifest
+
+            signature_xml = sign_manifest(manifest_text, private_key, certificate)
+
         # Assemble ZIP
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr("META-INF/MANIFEST.MF", manifest_text)
+            if signature_xml is not None:
+                zf.writestr("META-INF/SIGNATURE.XML", signature_xml)
             for path, data in files.items():
                 zf.writestr(path, data)
 

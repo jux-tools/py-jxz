@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import zipfile
+from typing import TYPE_CHECKING
 
 from jxz.errors import (
     ContainerStructureError,
@@ -14,6 +15,9 @@ from jxz.errors import (
     PathTraversalError,
 )
 from jxz.manifest import Manifest, compute_digest, parse
+
+if TYPE_CHECKING:
+    from cryptography.x509 import Certificate
 
 
 class ContainerReader:
@@ -59,8 +63,8 @@ class ContainerReader:
             raise ContainerStructureError(msg)
 
         # Parse manifest
-        manifest_text = self._zf.read("META-INF/MANIFEST.MF").decode("utf-8")
-        self._manifest = parse(manifest_text)
+        self._manifest_text = self._zf.read("META-INF/MANIFEST.MF").decode("utf-8")
+        self._manifest = parse(self._manifest_text)
 
     def get_manifest(self) -> Manifest:
         """Return the parsed manifest."""
@@ -116,3 +120,34 @@ class ContainerReader:
             actual_digest = compute_digest(data)
             if actual_digest != expected_digest:
                 raise DigestMismatchError(name, expected_digest, actual_digest)
+
+    @property
+    def is_signed(self) -> bool:
+        """Whether the container has a signature (META-INF/SIGNATURE.XML)."""
+        return "META-INF/SIGNATURE.XML" in self._zf.namelist()
+
+    def verify(self, certificate: Certificate | None = None) -> None:
+        """Verify container integrity: signature (if signed) then digests.
+
+        Follows the spec verification order:
+        1. If signed, verify the XML signature against the manifest.
+        2. Validate manifest digests (same as ``validate()``).
+
+        Unsigned containers pass signature verification (policy enforcement
+        is the caller's responsibility).
+
+        Args:
+            certificate: Optional X.509 certificate for signature verification.
+
+        Raises:
+            SignatureError: If the signature is invalid or content mismatch.
+            DigestMismatchError: If any file's SHA-256 doesn't match.
+            ContainerStructureError: If a manifest entry is missing from the ZIP.
+        """
+        if self.is_signed:
+            from jxz.signing import verify_signature
+
+            sig_bytes = self._zf.read("META-INF/SIGNATURE.XML")
+            verify_signature(sig_bytes, self._manifest_text, certificate)
+
+        self.validate()

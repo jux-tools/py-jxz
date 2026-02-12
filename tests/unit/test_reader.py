@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import zipfile
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -14,9 +15,13 @@ from jxz.errors import (
     ContainerStructureError,
     DigestMismatchError,
     PathTraversalError,
+    SignatureError,
 )
 from jxz.manifest import Manifest, compute_digest, generate
 from jxz.reader import ContainerReader
+
+if TYPE_CHECKING:
+    from cryptography.x509 import Certificate
 
 
 class TestReaderInit:
@@ -185,3 +190,73 @@ class TestReaderValidate:
         reader = ContainerReader(buf.getvalue())
         with pytest.raises(ContainerStructureError, match="not found in archive"):
             reader.validate()
+
+
+class TestReaderIsSigned:
+    def test_unsigned_container(self, sample_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(sample_jxz_bytes)
+        assert reader.is_signed is False
+
+    def test_signed_container(self, signed_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(signed_jxz_bytes)
+        assert reader.is_signed is True
+
+
+class TestReaderVerify:
+    def test_unsigned_passes(self, sample_jxz_bytes: bytes) -> None:
+        """verify() on unsigned container just runs digest validation."""
+        reader = ContainerReader(sample_jxz_bytes)
+        reader.verify()
+
+    def test_signed_passes(
+        self,
+        signed_jxz_bytes: bytes,
+        rsa_certificate: Certificate,
+    ) -> None:
+        reader = ContainerReader(signed_jxz_bytes)
+        reader.verify(certificate=rsa_certificate)
+
+    def test_tampered_content_fails(
+        self,
+        signed_jxz_bytes: bytes,
+        rsa_certificate: Certificate,
+    ) -> None:
+        """Modify a file after signing — digest check should fail."""
+        buf = io.BytesIO(signed_jxz_bytes)
+        with zipfile.ZipFile(buf, "r") as zf_in:
+            entries = {name: zf_in.read(name) for name in zf_in.namelist()}
+
+        entries["junit.xml"] = b"<tampered/>"
+
+        tampered_buf = io.BytesIO()
+        with zipfile.ZipFile(tampered_buf, "w") as zf_out:
+            for name, data in entries.items():
+                zf_out.writestr(name, data)
+
+        reader = ContainerReader(tampered_buf.getvalue())
+        with pytest.raises((DigestMismatchError, ContainerStructureError)):
+            reader.verify(certificate=rsa_certificate)
+
+    def test_tampered_manifest_fails(
+        self,
+        signed_jxz_bytes: bytes,
+        rsa_certificate: Certificate,
+    ) -> None:
+        """Modify manifest after signing — signature check should fail."""
+        buf = io.BytesIO(signed_jxz_bytes)
+        with zipfile.ZipFile(buf, "r") as zf_in:
+            entries = {name: zf_in.read(name) for name in zf_in.namelist()}
+
+        # Replace an existing field value (keeps manifest parseable)
+        manifest = entries["META-INF/MANIFEST.MF"].decode("utf-8")
+        manifest = manifest.replace("Created-By: test/1.0", "Created-By: evil/9.9")
+        entries["META-INF/MANIFEST.MF"] = manifest.encode("utf-8")
+
+        tampered_buf = io.BytesIO()
+        with zipfile.ZipFile(tampered_buf, "w") as zf_out:
+            for name, data in entries.items():
+                zf_out.writestr(name, data)
+
+        reader = ContainerReader(tampered_buf.getvalue())
+        with pytest.raises(SignatureError):
+            reader.verify(certificate=rsa_certificate)

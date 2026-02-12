@@ -32,8 +32,9 @@ from jxz.errors import (
 )
 from jxz.manifest import Manifest
 from jxz.reader import ContainerReader
+from jxz.signing import sign_manifest, verify_signature
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = [
     "ContainerBuilder",
@@ -46,4 +47,6 @@ __all__ = [
     "PathTraversalError",
     "SignatureError",
     "__version__",
+    "sign_manifest",
+    "verify_signature",
 ]

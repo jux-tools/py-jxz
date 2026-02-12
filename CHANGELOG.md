@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-02-12
+
+### Added
+
+- `jxz.signing` module: `sign_manifest()` and `verify_signature()` for XML digital signature creation and verification using signxml (enveloping XMLDSIG with exc-c14n)
+- `ContainerBuilder.build()` now accepts `private_key` and `certificate` parameters to produce signed containers with `META-INF/SIGNATURE.XML`
+- `ContainerReader.is_signed` property to check for signature presence
+- `ContainerReader.verify()` method: validates signature (if present) then digests, following spec verification order
+- Support for both RSA-SHA256 and ECDSA-SHA256 signature algorithms (auto-detected from key type)
+- Signing and verification test suite with programmatic key/certificate generation
+
 ## [0.1.1] - 2026-02-12
 
 ### Added

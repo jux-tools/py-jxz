@@ -6,11 +6,16 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import pytest
 
 from jxz.builder import ContainerBuilder
 from jxz.reader import ContainerReader
+
+if TYPE_CHECKING:
+    from cryptography.hazmat.primitives.asymmetric import ec, rsa
+    from cryptography.x509 import Certificate
 
 
 @pytest.mark.integration()
@@ -90,3 +95,83 @@ class TestRoundTrip:
         reader.validate()
         assert reader.get_report() == sample_junit_xml
         assert reader.get_attachments()["binary.bin"] == attachment_data
+
+
+@pytest.mark.integration()
+class TestSignedRoundTrip:
+    def test_rsa_signed(
+        self,
+        sample_junit_xml: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+        rsa_certificate: Certificate,
+    ) -> None:
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        jxz_bytes = builder.build(
+            created_by="test/1.0",
+            report_type="pytest-junit",
+            private_key=rsa_private_key,
+            certificate=rsa_certificate,
+        )
+
+        reader = ContainerReader(jxz_bytes)
+        assert reader.is_signed
+        reader.verify(certificate=rsa_certificate)
+        assert reader.get_report() == sample_junit_xml
+
+    def test_ecdsa_signed(
+        self,
+        sample_junit_xml: bytes,
+        ec_private_key: ec.EllipticCurvePrivateKey,
+        ec_certificate: Certificate,
+    ) -> None:
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        jxz_bytes = builder.build(
+            created_by="test/1.0",
+            report_type="pytest-junit",
+            private_key=ec_private_key,
+            certificate=ec_certificate,
+        )
+
+        reader = ContainerReader(jxz_bytes)
+        assert reader.is_signed
+        reader.verify(certificate=ec_certificate)
+        assert reader.get_report() == sample_junit_xml
+
+    def test_signed_with_attachments_and_meta(
+        self,
+        sample_junit_xml: bytes,
+        sample_attachment: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+        rsa_certificate: Certificate,
+    ) -> None:
+        meta_json = b'{"framework": "pytest"}'
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        builder.add_attachment(
+            "screenshot.png", sample_attachment, attachment_for="test_login"
+        )
+        builder.add_meta("pytest-metadata.json", meta_json)
+        jxz_bytes = builder.build(
+            created_by="pytest-jux/0.1.0",
+            report_type="pytest-junit",
+            private_key=rsa_private_key,
+            certificate=rsa_certificate,
+        )
+
+        reader = ContainerReader(jxz_bytes)
+        assert reader.is_signed
+        reader.verify(certificate=rsa_certificate)
+        assert reader.get_report() == sample_junit_xml
+        assert reader.get_attachments()["screenshot.png"] == sample_attachment
+
+    def test_unsigned_verifiable(self, sample_junit_xml: bytes) -> None:
+        """Unsigned container passes verify() (no signature to check)."""
+        builder = ContainerBuilder()
+        builder.set_report(sample_junit_xml)
+        jxz_bytes = builder.build(created_by="test/1.0", report_type="pytest-junit")
+
+        reader = ContainerReader(jxz_bytes)
+        assert not reader.is_signed
+        reader.verify()
