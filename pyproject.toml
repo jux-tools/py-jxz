@@ -54,6 +54,7 @@ dev = [
     "mypy>=1.10",
     "pre-commit>=3.0",
     "rich>=13.0",
+    "lxml-stubs>=0.5",
 ]
 
 [project.scripts]
@@ -131,6 +132,9 @@ ignore = [
     "B008",   # function calls in argument defaults
     "C901",   # too complex
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["TCH002"]  # pytest is a runtime dep in test files
 
 [tool.ruff.lint.isort]
 known-first-party = ["jxz"]

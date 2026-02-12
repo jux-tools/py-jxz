@@ -16,28 +16,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-@pytest.fixture()
-def unsigned_jxz_file(
-    tmp_path: Path,
-    sample_jxz_bytes: bytes,
-) -> Path:
-    """Write unsigned container to a temp file."""
-    p = tmp_path / "unsigned.jxz"
-    p.write_bytes(sample_jxz_bytes)
-    return p
-
-
-@pytest.fixture()
-def signed_jxz_file(
-    tmp_path: Path,
-    signed_jxz_bytes: bytes,
-) -> Path:
-    """Write signed container to a temp file."""
-    p = tmp_path / "signed.jxz"
-    p.write_bytes(signed_jxz_bytes)
-    return p
-
-
 class TestInspectHuman:
     def test_inspect_unsigned(
         self,
@@ -56,7 +34,7 @@ class TestInspectHuman:
         assert "Signed:" in out
         assert "junit.xml" in out
 
-    def test_inspect_signed(
+    def test_inspect_signed_rsa(
         self,
         signed_jxz_file: Path,
         monkeypatch: pytest.MonkeyPatch,
@@ -66,7 +44,31 @@ class TestInspectHuman:
         rc = main()
         assert rc == 0
         out = capsys.readouterr().out
-        assert "Yes" in out
+        assert "Yes (RSA-SHA256)" in out
+
+    def test_inspect_signed_ecdsa(
+        self,
+        ecdsa_signed_jxz_file: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        monkeypatch.setattr("sys.argv", ["jxz", "inspect", str(ecdsa_signed_jxz_file)])
+        rc = main()
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "Yes (ECDSA-SHA256)" in out
+
+    def test_inspect_with_meta(
+        self,
+        jxz_file_with_meta: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        monkeypatch.setattr("sys.argv", ["jxz", "inspect", str(jxz_file_with_meta)])
+        rc = main()
+        assert rc == 0
+        out = capsys.readouterr().out
+        assert "pytest-metadata.json" in out
 
 
 class TestInspectJson:
@@ -88,6 +90,21 @@ class TestInspectJson:
         assert isinstance(data["files"], list)
         assert len(data["files"]) >= 1
 
+    def test_json_signed_includes_signature(
+        self,
+        signed_jxz_file: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        monkeypatch.setattr(
+            "sys.argv", ["jxz", "inspect", str(signed_jxz_file), "--json"]
+        )
+        rc = main()
+        assert rc == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data["signed"] is True
+        assert data["signature"] is not None
+
 
 class TestInspectErrors:
     def test_missing_file(
@@ -99,3 +116,14 @@ class TestInspectErrors:
         rc = main()
         assert rc == 1
         assert "not found" in capsys.readouterr().err
+
+    def test_corrupt_file(
+        self,
+        corrupt_jxz_file: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        monkeypatch.setattr("sys.argv", ["jxz", "inspect", str(corrupt_jxz_file)])
+        rc = main()
+        assert rc == 1
+        assert "Error" in capsys.readouterr().err

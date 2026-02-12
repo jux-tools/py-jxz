@@ -5,44 +5,14 @@
 
 from __future__ import annotations
 
-import io
-import zipfile
 from typing import TYPE_CHECKING
 
 import pytest
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
 from jxz.__main__ import main
 
-
-@pytest.fixture()
-def unsigned_jxz_file(
-    tmp_path: Path,
-    sample_jxz_bytes: bytes,
-) -> Path:
-    p = tmp_path / "unsigned.jxz"
-    p.write_bytes(sample_jxz_bytes)
-    return p
-
-
-@pytest.fixture()
-def tampered_jxz_file(
-    tmp_path: Path,
-    sample_jxz_bytes: bytes,
-) -> Path:
-    buf = io.BytesIO(sample_jxz_bytes)
-    with zipfile.ZipFile(buf, "r") as zf_in:
-        entries = {name: zf_in.read(name) for name in zf_in.namelist()}
-    entries["junit.xml"] = b"<tampered/>"
-    tampered_buf = io.BytesIO()
-    with zipfile.ZipFile(tampered_buf, "w") as zf_out:
-        for name, data in entries.items():
-            zf_out.writestr(name, data)
-    p = tmp_path / "tampered.jxz"
-    p.write_bytes(tampered_buf.getvalue())
-    return p
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestExtract:
@@ -112,6 +82,24 @@ class TestExtract:
         assert not (out_dir / "junit.xml").exists()
         assert (out_dir / "attachments" / "screenshot.png").is_file()
 
+    def test_extract_with_meta(
+        self,
+        jxz_file_with_meta: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        out_dir = tmp_path / "with_meta"
+        monkeypatch.setattr(
+            "sys.argv",
+            ["jxz", "extract", str(jxz_file_with_meta), "--output", str(out_dir)],
+        )
+        rc = main()
+        assert rc == 0
+        assert (out_dir / "META-INF" / "pytest-metadata.json").is_file()
+        stdout = capsys.readouterr().out
+        assert "pytest-metadata.json" in stdout
+
 
 class TestExtractErrors:
     def test_tampered_refuses(
@@ -139,3 +127,18 @@ class TestExtractErrors:
         rc = main()
         assert rc == 1
         assert "not found" in capsys.readouterr().err
+
+    def test_corrupt_file(
+        self,
+        corrupt_jxz_file: Path,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        monkeypatch.setattr(
+            "sys.argv",
+            ["jxz", "extract", str(corrupt_jxz_file), "--output", str(tmp_path / "x")],
+        )
+        rc = main()
+        assert rc == 1
+        assert "Error" in capsys.readouterr().err

@@ -5,12 +5,19 @@
 
 from __future__ import annotations
 
+import io
+import zipfile
 from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
 
 from jxz.builder import ContainerBuilder
@@ -186,3 +193,95 @@ def signed_jxz_bytes(
         private_key=rsa_private_key,
         certificate=rsa_certificate,
     )
+
+
+@pytest.fixture()
+def ecdsa_signed_jxz_bytes(
+    sample_junit_xml: bytes,
+    sample_attachment: bytes,
+    fixed_timestamp: datetime,
+    ec_private_key: ec.EllipticCurvePrivateKey,
+    ec_certificate: x509.Certificate,
+) -> bytes:
+    """Pre-built signed container (ECDSA) for reader tests."""
+    builder = ContainerBuilder()
+    builder.set_report(sample_junit_xml)
+    builder.add_attachment(
+        "screenshot.png", sample_attachment, attachment_for="test_login"
+    )
+    return builder.build(
+        created_by="test/1.0",
+        report_type="pytest-junit",
+        timestamp=fixed_timestamp,
+        private_key=ec_private_key,
+        certificate=ec_certificate,
+    )
+
+
+# ---------------------------------------------------------------------------
+# File-based fixtures for CLI tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def unsigned_jxz_file(tmp_path: Path, sample_jxz_bytes: bytes) -> Path:
+    """Unsigned container written to a temp file."""
+    p = tmp_path / "unsigned.jxz"
+    p.write_bytes(sample_jxz_bytes)
+    return p
+
+
+@pytest.fixture()
+def signed_jxz_file(tmp_path: Path, signed_jxz_bytes: bytes) -> Path:
+    """RSA-signed container written to a temp file."""
+    p = tmp_path / "signed.jxz"
+    p.write_bytes(signed_jxz_bytes)
+    return p
+
+
+@pytest.fixture()
+def ecdsa_signed_jxz_file(tmp_path: Path, ecdsa_signed_jxz_bytes: bytes) -> Path:
+    """ECDSA-signed container written to a temp file."""
+    p = tmp_path / "ecdsa_signed.jxz"
+    p.write_bytes(ecdsa_signed_jxz_bytes)
+    return p
+
+
+@pytest.fixture()
+def jxz_file_with_meta(tmp_path: Path, jxz_bytes_with_meta: bytes) -> Path:
+    """Container with META-INF extras written to a temp file."""
+    p = tmp_path / "with_meta.jxz"
+    p.write_bytes(jxz_bytes_with_meta)
+    return p
+
+
+@pytest.fixture()
+def tampered_jxz_file(tmp_path: Path, sample_jxz_bytes: bytes) -> Path:
+    """Container with tampered junit.xml content."""
+    buf = io.BytesIO(sample_jxz_bytes)
+    with zipfile.ZipFile(buf, "r") as zf_in:
+        entries = {name: zf_in.read(name) for name in zf_in.namelist()}
+    entries["junit.xml"] = b"<tampered/>"
+    tampered_buf = io.BytesIO()
+    with zipfile.ZipFile(tampered_buf, "w") as zf_out:
+        for name, data in entries.items():
+            zf_out.writestr(name, data)
+    p = tmp_path / "tampered.jxz"
+    p.write_bytes(tampered_buf.getvalue())
+    return p
+
+
+@pytest.fixture()
+def corrupt_jxz_file(tmp_path: Path) -> Path:
+    """File that is not a valid ZIP."""
+    p = tmp_path / "corrupt.jxz"
+    p.write_bytes(b"this is not a zip file")
+    return p
+
+
+@pytest.fixture()
+def cert_file(tmp_path: Path, rsa_certificate: x509.Certificate) -> Path:
+    """RSA certificate PEM file."""
+    p = tmp_path / "cert.pem"
+    p.write_bytes(rsa_certificate.public_bytes(Encoding.PEM))
+    return p

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import TYPE_CHECKING, TypedDict
 
@@ -14,6 +15,8 @@ from jxz.cli import format_size
 from jxz.errors import JxzError
 from jxz.manifest import compute_digest
 from jxz.reader import ContainerReader
+
+_DS_NS = "http://www.w3.org/2000/09/xmldsig#"
 
 if TYPE_CHECKING:
     import argparse
@@ -40,10 +43,18 @@ def _signature_info(reader: ContainerReader) -> str:
     if not reader.is_signed:
         return "No"
     sig = reader.get_signature_xml()
-    if sig is not None and b"rsa-sha256" in sig.lower():
-        return "Yes (RSA-SHA256)"
-    if sig is not None and b"ecdsa-sha256" in sig.lower():
-        return "Yes (ECDSA-SHA256)"
+    if sig is not None:
+        try:
+            root = ET.fromstring(sig)
+            method = root.find(f".//{{{_DS_NS}}}SignatureMethod")
+            if method is not None:
+                algo = (method.get("Algorithm") or "").lower()
+                if "rsa-sha256" in algo:
+                    return "Yes (RSA-SHA256)"
+                if "ecdsa-sha256" in algo:
+                    return "Yes (ECDSA-SHA256)"
+        except ET.ParseError:
+            pass
     return "Yes"
 
 
