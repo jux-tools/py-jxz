@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Diátaxis documentation framework populated with content:
+  - Tutorial: getting-started walkthrough (build, read, sign, verify lifecycle)
+  - How-to guides: build containers, verify containers, use the CLI
+  - Reference: Python API and CLI reference
+  - Explanation: design rationale (ZIP format, XMLDSIG, manifest chaining, security model)
+  - Documentation index (`docs/README.md`)
+
 ## [0.1.3] - 2026-02-12
 
 ### Added

@@ -57,7 +57,7 @@ This project follows [AI-Assisted Project Orchestration patterns](https://github
 - **Testing**: TDD with pytest, >85% coverage required
 - **Versioning**: Semantic versioning (0.x.x during development)
 - **Git Workflow**: Gitflow (main, develop, feature/*, release/*, hotfix/*)
-- **Documentation**: Diataxis framework
+- **Documentation**: Diátaxis framework (populated: tutorial, 3 how-to guides, 2 references, 1 explanation)
 - **Architecture**: C4 DSL models in `docs/architecture/`
 
 ## Quick Commands
