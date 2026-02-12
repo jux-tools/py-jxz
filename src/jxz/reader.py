@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import zipfile
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from jxz.errors import (
@@ -87,9 +88,44 @@ class ContainerReader:
                 result[rel] = self._zf.read(name)
         return result
 
+    def get_meta(self) -> dict[str, bytes]:
+        """Return META-INF extras (excluding MANIFEST.MF and SIGNATURE.XML).
+
+        Keys are filenames only (e.g. ``pytest-metadata.json``).
+        """
+        prefix = "META-INF/"
+        excluded = {"META-INF/MANIFEST.MF", "META-INF/SIGNATURE.XML"}
+        result: dict[str, bytes] = {}
+        for name in self._zf.namelist():
+            if name.startswith(prefix) and name != prefix and name not in excluded:
+                rel = name[len(prefix) :]
+                result[rel] = self._zf.read(name)
+        return result
+
+    def get_signature_xml(self) -> bytes | None:
+        """Return raw SIGNATURE.XML bytes, or None if unsigned."""
+        if not self.is_signed:
+            return None
+        return self._zf.read("META-INF/SIGNATURE.XML")
+
     def list_entries(self) -> list[str]:
         """Return all entry paths in the container."""
         return self._zf.namelist()
+
+    @property
+    def created_by(self) -> str:
+        """Producer tool identifier from manifest."""
+        return self._manifest.main["Created-By"]
+
+    @property
+    def report_type(self) -> str:
+        """Report dialect from manifest."""
+        return self._manifest.main["Report-Type"]
+
+    @property
+    def timestamp(self) -> datetime:
+        """Container creation timestamp from manifest (parsed ISO 8601)."""
+        return datetime.fromisoformat(self._manifest.main["Timestamp"])
 
     def validate(self) -> None:
         """Validate file digests and sizes against the manifest.

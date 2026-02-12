@@ -20,6 +20,7 @@ py-jxz implements the `.jxz` container format in Python, providing:
 | `jxz.manifest` | Generate and parse JAR-style `MANIFEST.MF` | builder, reader |
 | `jxz.reader` | Extract, validate, and verify `.jxz` containers | py-juxlib, spooky |
 | `jxz.signing` | XMLDSIG signing and verification (enveloping mode) | builder, reader |
+| `jxz.cli` | CLI subcommands: inspect, verify, extract | end users, CI pipelines |
 
 ### Why a Separate Package
 
@@ -35,9 +36,9 @@ py-jxz                          <-- format implementation
 
 ## Current Development Status
 
-- **Completed Sprints**: Sprint 1 (core containers), Sprint 2 (XML signatures)
-- **Latest Release**: v0.1.2
-- **Next Milestone**: TBD (Sprint 3)
+- **Completed Sprints**: Sprint 1 (core containers), Sprint 2 (XML signatures), Sprint 3 (API polish & CLI)
+- **Latest Release**: v0.1.3
+- **Next Milestone**: TBD (Sprint 4)
 
 ## Foundational ADRs
 
@@ -86,12 +87,18 @@ uv run mypy src/jxz
 ```
 src/jxz/
 ├── __init__.py          # Public API exports
+├── __main__.py          # CLI entry point (python -m jxz)
 ├── py.typed             # PEP 561 marker
 ├── builder.py           # ContainerBuilder: assemble .jxz from parts
 ├── manifest.py          # Manifest generation and parsing (JAR format)
 ├── reader.py            # ContainerReader: extract and verify .jxz
 ├── signing.py           # XMLDSIG signing/verification (enveloping mode)
-└── errors.py            # JxzError hierarchy
+├── errors.py            # JxzError hierarchy
+└── cli/
+    ├── __init__.py      # Shared CLI utilities
+    ├── inspect.py       # inspect subcommand
+    ├── verify.py        # verify subcommand
+    └── extract.py       # extract subcommand
 ```
 
 ## Dependencies
@@ -106,18 +113,12 @@ cryptography = ">=42.0"      # RSA/ECDSA key handling
 
 Standard library only for core operations: `zipfile`, `hashlib`, `tempfile`, `pathlib`.
 
-### Development Dependencies
+### Optional Dependencies
 
 ```toml
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov>=4.0",
-    "hypothesis>=6.0",
-    "ruff>=0.4",
-    "mypy>=1.10",
-    "pre-commit>=3.0",
-]
+cli = ["rich>=13.0"]     # Enhanced CLI output (optional)
+dev = [...]              # Testing and linting tools
 ```
 
 ## AI Collaboration Notes

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import zipfile
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import pytest
@@ -190,6 +191,67 @@ class TestReaderValidate:
         reader = ContainerReader(buf.getvalue())
         with pytest.raises(ContainerStructureError, match="not found in archive"):
             reader.validate()
+
+
+class TestReaderGetMeta:
+    def test_get_meta_returns_extras(
+        self,
+        jxz_bytes_with_meta: bytes,
+        sample_meta: bytes,
+    ) -> None:
+        reader = ContainerReader(jxz_bytes_with_meta)
+        meta = reader.get_meta()
+        assert "pytest-metadata.json" in meta
+        assert meta["pytest-metadata.json"] == sample_meta
+
+    def test_get_meta_excludes_manifest_and_signature(
+        self,
+        jxz_bytes_with_meta: bytes,
+    ) -> None:
+        reader = ContainerReader(jxz_bytes_with_meta)
+        meta = reader.get_meta()
+        assert "MANIFEST.MF" not in meta
+        assert "SIGNATURE.XML" not in meta
+
+    def test_get_meta_empty_when_no_extras(self, sample_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(sample_jxz_bytes)
+        assert reader.get_meta() == {}
+
+
+class TestReaderGetSignatureXml:
+    def test_returns_bytes_for_signed(self, signed_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(signed_jxz_bytes)
+        sig = reader.get_signature_xml()
+        assert sig is not None
+        assert b"<ds:Signature" in sig or b"<Signature" in sig
+
+    def test_returns_none_for_unsigned(self, sample_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(sample_jxz_bytes)
+        assert reader.get_signature_xml() is None
+
+
+class TestReaderProperties:
+    def test_created_by(self, sample_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(sample_jxz_bytes)
+        assert reader.created_by == "test/1.0"
+
+    def test_report_type(self, sample_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(sample_jxz_bytes)
+        assert reader.report_type == "pytest-junit"
+
+    def test_timestamp(
+        self,
+        sample_jxz_bytes: bytes,
+        fixed_timestamp: datetime,
+    ) -> None:
+        reader = ContainerReader(sample_jxz_bytes)
+        ts = reader.timestamp
+        assert isinstance(ts, datetime)
+        assert ts == fixed_timestamp
+
+    def test_timestamp_is_datetime(self, sample_jxz_bytes: bytes) -> None:
+        reader = ContainerReader(sample_jxz_bytes)
+        assert isinstance(reader.timestamp, datetime)
 
 
 class TestReaderIsSigned:

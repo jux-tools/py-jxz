@@ -139,6 +139,33 @@ def ec_certificate(ec_private_key: ec.EllipticCurvePrivateKey) -> x509.Certifica
 
 
 @pytest.fixture()
+def sample_meta() -> bytes:
+    """Sample metadata JSON bytes."""
+    return b'{"framework": "pytest", "version": "8.0.0"}'
+
+
+@pytest.fixture()
+def jxz_bytes_with_meta(
+    sample_junit_xml: bytes,
+    sample_attachment: bytes,
+    sample_meta: bytes,
+    fixed_timestamp: datetime,
+) -> bytes:
+    """Pre-built unsigned container with META-INF extras for reader tests."""
+    builder = ContainerBuilder()
+    builder.set_report(sample_junit_xml)
+    builder.add_attachment(
+        "screenshot.png", sample_attachment, attachment_for="test_login"
+    )
+    builder.add_meta("pytest-metadata.json", sample_meta)
+    return builder.build(
+        created_by="test/1.0",
+        report_type="pytest-junit",
+        timestamp=fixed_timestamp,
+    )
+
+
+@pytest.fixture()
 def signed_jxz_bytes(
     sample_junit_xml: bytes,
     sample_attachment: bytes,

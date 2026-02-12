@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-02-12
+
+### Added
+
+- `ContainerReader.get_meta()`: return META-INF extras (excluding MANIFEST.MF and SIGNATURE.XML) as a dict
+- `ContainerReader.get_signature_xml()`: return raw SIGNATURE.XML bytes, or None if unsigned
+- `ContainerReader.created_by` property: producer tool identifier from manifest
+- `ContainerReader.report_type` property: report dialect from manifest
+- `ContainerReader.timestamp` property: parsed ISO 8601 datetime from manifest
+- `python -m jxz` CLI with three subcommands:
+  - `inspect`: display container metadata, file listing, and signature status (human-readable and `--json`)
+  - `verify`: verify container integrity and signatures (`--cert`, `--quiet`, `--json`)
+  - `extract`: extract container contents to disk (`--output`, `--report-only`, `--attachments-only`)
+- `jxz` console script entry point via `[project.scripts]`
+- Optional `cli` extra with `rich>=13.0` for enhanced terminal output
+- CLI test suite covering all three subcommands
+
 ## [0.1.2] - 2026-02-12
 
 ### Added
