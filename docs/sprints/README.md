@@ -7,8 +7,8 @@ This directory contains sprint planning and retrospective documents for py-jxz.
 
 ## Current Status
 
-- **Latest Release**: v0.1.4
-- **Current Sprint**: Sprint 5 (planned)
+- **Latest Release**: v0.1.5
+- **Current Sprint**: Sprint 5 (completed)
 
 ## Sprint Index
 
@@ -18,7 +18,7 @@ This directory contains sprint planning and retrospective documents for py-jxz.
 | 2 | v0.1.2 | 2026-02-12 | Done | [plan](sprint-02-plan.md) | [retro](sprint-02-retrospective.md) |
 | 3 | v0.1.3 | 2026-02-12 | Done | [plan](sprint-03-plan.md) | [retro](sprint-03-retrospective.md) |
 | 4 | v0.1.4 | 2026-02-12 | Done | [plan](sprint-04-plan.md) | [retro](sprint-04-retrospective.md) |
-| 5 | v0.1.5 | — | Planned | [plan](sprint-05-plan.md) | — |
+| 5 | v0.1.5 | 2026-02-12 | Done | [plan](sprint-05-plan.md) | [retro](sprint-05-retrospective.md) |
 
 ## Roadmap Summary
 

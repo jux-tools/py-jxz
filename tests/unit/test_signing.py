@@ -11,7 +11,7 @@ import pytest
 from lxml import etree
 
 from jxz.errors import SignatureError
-from jxz.signing import sign_manifest, verify_signature
+from jxz.signing import sign_container, sign_manifest, verify_signature
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric import ec, rsa
@@ -159,3 +159,115 @@ class TestVerifySignature:
     ) -> None:
         with pytest.raises(SignatureError):
             verify_signature(b"not xml at all", SAMPLE_MANIFEST, rsa_certificate)
+
+
+class TestSignContainer:
+    def test_sign_unsigned_rsa(
+        self,
+        sample_jxz_bytes: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+        rsa_certificate: Certificate,
+    ) -> None:
+        result = sign_container(sample_jxz_bytes, rsa_private_key, rsa_certificate)
+        from jxz.reader import ContainerReader
+
+        reader = ContainerReader(result)
+        assert reader.is_signed
+
+    def test_sign_unsigned_ecdsa(
+        self,
+        sample_jxz_bytes: bytes,
+        ec_private_key: ec.EllipticCurvePrivateKey,
+        ec_certificate: Certificate,
+    ) -> None:
+        result = sign_container(sample_jxz_bytes, ec_private_key, ec_certificate)
+        from jxz.reader import ContainerReader
+
+        reader = ContainerReader(result)
+        assert reader.is_signed
+
+    def test_already_signed_raises(
+        self,
+        signed_jxz_bytes: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+    ) -> None:
+        with pytest.raises(SignatureError, match="already signed"):
+            sign_container(signed_jxz_bytes, rsa_private_key)
+
+    def test_already_signed_force(
+        self,
+        signed_jxz_bytes: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+        rsa_certificate: Certificate,
+    ) -> None:
+        result = sign_container(
+            signed_jxz_bytes, rsa_private_key, rsa_certificate, force=True
+        )
+        from jxz.reader import ContainerReader
+
+        reader = ContainerReader(result)
+        assert reader.is_signed
+
+    def test_round_trip_sign_then_verify(
+        self,
+        sample_jxz_bytes: bytes,
+        rsa_private_key: rsa.RSAPrivateKey,
+        rsa_certificate: Certificate,
+    ) -> None:
+        result = sign_container(sample_jxz_bytes, rsa_private_key, rsa_certificate)
+        from jxz.reader import ContainerReader
+
+        reader = ContainerReader(result)
+        reader.verify(certificate=rsa_certificate)
+
+    def test_resign_with_different_key(
+        self,
+        signed_jxz_bytes: bytes,
+        ec_private_key: ec.EllipticCurvePrivateKey,
+        ec_certificate: Certificate,
+    ) -> None:
+        result = sign_container(
+            signed_jxz_bytes, ec_private_key, ec_certificate, force=True
+        )
+        from jxz.reader import ContainerReader
+
+        reader = ContainerReader(result)
+        reader.verify(certificate=ec_certificate)
+
+    def test_invalid_container(
+        self,
+        rsa_private_key: rsa.RSAPrivateKey,
+    ) -> None:
+        from jxz.errors import ContainerStructureError
+
+        with pytest.raises(ContainerStructureError):
+            sign_container(b"not a zip", rsa_private_key)
+
+    def test_tampered_container(
+        self,
+        rsa_private_key: rsa.RSAPrivateKey,
+    ) -> None:
+        """Tampered container fails validation before signing."""
+        import io
+        import zipfile
+
+        # Build a minimal container, then tamper with it
+        from jxz.builder import ContainerBuilder
+        from jxz.errors import JxzError
+
+        builder = ContainerBuilder()
+        builder.set_report(b"<testsuites/>")
+        data = builder.build(created_by="test/1.0", report_type="pytest-junit")
+
+        # Tamper: replace junit.xml content (different size triggers size check)
+        buf = io.BytesIO(data)
+        with zipfile.ZipFile(buf, "r") as zf_in:
+            entries = {name: zf_in.read(name) for name in zf_in.namelist()}
+        entries["junit.xml"] = b"<tampered/>"
+        tampered_buf = io.BytesIO()
+        with zipfile.ZipFile(tampered_buf, "w") as zf_out:
+            for name, content in entries.items():
+                zf_out.writestr(name, content)
+
+        with pytest.raises(JxzError):
+            sign_container(tampered_buf.getvalue(), rsa_private_key)
