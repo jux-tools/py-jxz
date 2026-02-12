@@ -7,22 +7,26 @@ This directory contains sprint planning and retrospective documents for py-jxz.
 
 ## Current Status
 
-- **Latest Release**: v0.1.0
-- **Current Sprint**: Sprint 1 (planning)
+- **Latest Release**: v0.1.4
+- **Current Sprint**: Sprint 4 (completed)
 
 ## Sprint Index
 
-| Sprint | Version | Dates | Status | Plan | Retrospective |
-|--------|---------|-------|--------|------|---------------|
-| 1 | v0.1.x | TBD | Planning | - | - |
+| Sprint | Version | Date | Status | Plan | Retrospective |
+|--------|---------|------|--------|------|---------------|
+| 1 | v0.1.1 | 2026-02-12 | Done | [plan](sprint-01-plan.md) | [retro](sprint-01-retrospective.md) |
+| 2 | v0.1.2 | 2026-02-12 | Done | [plan](sprint-02-plan.md) | [retro](sprint-02-retrospective.md) |
+| 3 | v0.1.3 | 2026-02-12 | Done | [plan](sprint-03-plan.md) | [retro](sprint-03-retrospective.md) |
+| 4 | v0.1.4 | 2026-02-12 | Done | [plan](sprint-04-plan.md) | [retro](sprint-04-retrospective.md) |
 
 ## Roadmap Summary
 
 | Sprint | Focus | Modules |
 |--------|-------|---------|
 | 1 | Core container operations | manifest, builder, reader |
-| 2 | Signing and verification | detached XMLDSIG, certificate handling |
-| 3 | Integration testing | round-trip tests, consumer compatibility |
+| 2 | Signing and verification | XMLDSIG enveloping, certificate handling |
+| 3 | API polish & CLI tooling | reader accessors, inspect/verify/extract |
+| 4 | `jxz build` CLI & utilities | build subcommand, load_private_key |
 
 ## Story Point Reference
 
