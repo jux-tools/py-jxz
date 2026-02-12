@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-02-12
+
+### Added
+
+- `jxz.manifest` module: `Manifest` dataclass, `generate()`, `parse()`, `compute_digest()` for JAR-style manifest handling
+- `jxz.builder` module: `ContainerBuilder` class for assembling unsigned `.jxz` containers from JUnit XML reports, attachments, and metadata
+- `jxz.reader` module: `ContainerReader` class for extracting and validating `.jxz` containers with SHA-256 digest verification
+- Public API exports: `ContainerBuilder`, `ContainerReader`, `Manifest`, and all error classes
+- Comprehensive test suite: unit tests for manifest, builder, reader; integration round-trip tests
+- Path traversal (ZIP slip) protection in both builder and reader
+
 ## [0.1.0] - 2026-02-12
 
 ### Added
