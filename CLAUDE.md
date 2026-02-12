@@ -19,6 +19,7 @@ py-jxz implements the `.jxz` container format in Python, providing:
 | `jxz.builder` | Build `.jxz` containers from JUnit XML + attachments | py-juxlib, pytest-jux, behave-jux |
 | `jxz.manifest` | Generate and parse JAR-style `MANIFEST.MF` | builder, reader |
 | `jxz.reader` | Extract, validate, and verify `.jxz` containers | py-juxlib, spooky |
+| `jxz.signing` | XMLDSIG signing and verification (enveloping mode) | builder, reader |
 
 ### Why a Separate Package
 
@@ -34,11 +35,9 @@ py-jxz                          <-- format implementation
 
 ## Current Development Status
 
-- **Current Sprint**: Sprint 1
-- **Sprint Goal**: Core container building and reading
-- **Status**: Planning
-- **Latest Release**: v0.1.0
-- **Next Milestone**: v0.1.1
+- **Completed Sprints**: Sprint 1 (core containers), Sprint 2 (XML signatures)
+- **Latest Release**: v0.1.2
+- **Next Milestone**: TBD (Sprint 3)
 
 ## Foundational ADRs
 
@@ -86,11 +85,12 @@ uv run mypy src/jxz
 
 ```
 src/jxz/
-├── __init__.py          # Public API: build_container, read_container
+├── __init__.py          # Public API exports
 ├── py.typed             # PEP 561 marker
 ├── builder.py           # ContainerBuilder: assemble .jxz from parts
 ├── manifest.py          # Manifest generation and parsing (JAR format)
 ├── reader.py            # ContainerReader: extract and verify .jxz
+├── signing.py           # XMLDSIG signing/verification (enveloping mode)
 └── errors.py            # JxzError hierarchy
 ```
 
