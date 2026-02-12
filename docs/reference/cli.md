@@ -3,7 +3,7 @@
 
 # CLI Reference
 
-Command-line interface for building, inspecting, verifying, and extracting `.jxz` containers.
+Command-line interface for building, inspecting, signing, verifying, and extracting `.jxz` containers.
 
 ## Installation
 
@@ -150,6 +150,54 @@ Files (2):
 |------|---------|
 | 0 | Success |
 | 1 | File not found or invalid container |
+
+---
+
+## `jxz sign`
+
+Sign (or re-sign) an existing `.jxz` container.
+
+```
+jxz sign FILE --key PEM [--cert PEM] [-o PATH] [--force]
+```
+
+### Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `FILE` | Path to `.jxz` file |
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `--key PEM` | Private key PEM file for signing (RSA or ECDSA, auto-detected) — **required** |
+| `--cert PEM` | Certificate PEM file to embed in the signature |
+| `--output PATH`, `-o PATH` | Output path (default: overwrite input file in-place) |
+| `--force` | Allow re-signing an already-signed container |
+
+### Behavior
+
+1. Reads and validates the container (digests must pass).
+2. Refuses already-signed containers unless `--force` is given.
+3. With `--force`, strips the existing `SIGNATURE.XML` before re-signing.
+4. Signs the manifest text with the provided key.
+5. Writes the new container with `META-INF/SIGNATURE.XML` added.
+
+### Output
+
+Prints the output file path to stdout:
+
+```
+/path/to/container.jxz
+```
+
+### Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| 0 | Container signed successfully |
+| 1 | File not found, already signed (without `--force`), invalid container, or signing failure |
 
 ---
 

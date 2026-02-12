@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-02-12
+
+### Added
+
+- `jxz sign` CLI subcommand: sign or re-sign existing `.jxz` containers
+  - Required `--key` flag (RSA or ECDSA, auto-detected)
+  - Optional `--cert` flag to embed certificate in signature
+  - In-place signing by default, `-o` for alternate output path
+  - `--force` flag to allow re-signing already-signed containers
+- `sign_container()` library function in `jxz.signing`: programmatic signing of existing containers
+  - Validates digests before signing (refuses tampered containers)
+  - Supports re-signing with `force=True`
+
 ## [0.1.4] - 2026-02-12
 
 ### Added

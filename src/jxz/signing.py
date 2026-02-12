@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import io
+import zipfile
 from typing import TYPE_CHECKING, Any, Union
 
 from lxml import etree
@@ -153,3 +155,56 @@ def verify_signature(
     if signed_text != manifest_text:
         msg = "Signed manifest content does not match actual manifest"
         raise SignatureError(msg)
+
+
+def sign_container(
+    data: bytes,
+    private_key: PrivateKey,
+    certificate: Certificate | None = None,
+    *,
+    force: bool = False,
+) -> bytes:
+    """Sign (or re-sign) an existing .jxz container.
+
+    Reads the container, validates digests, signs the manifest, and
+    returns a new container with ``META-INF/SIGNATURE.XML`` added.
+
+    Args:
+        data: Complete .jxz container bytes.
+        private_key: RSA or ECDSA private key.
+        certificate: Optional X.509 certificate to embed in the signature.
+        force: If True, allow re-signing an already-signed container.
+
+    Returns:
+        New .jxz container bytes with signature.
+
+    Raises:
+        SignatureError: If the container is already signed and force is False.
+        ContainerStructureError: If the container is invalid.
+        DigestMismatchError: If digest validation fails.
+    """
+    from jxz.reader import ContainerReader
+
+    reader = ContainerReader(data)
+
+    if reader.is_signed and not force:
+        msg = "Container is already signed (use force=True to re-sign)"
+        raise SignatureError(msg)
+
+    reader.validate()
+
+    # Sign the manifest
+    signature_xml = sign_manifest(reader._manifest_text, private_key, certificate)
+
+    # Repackage: copy all entries except old SIGNATURE.XML, add new one
+    src = zipfile.ZipFile(io.BytesIO(data))
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as dst:
+        for name in src.namelist():
+            if name == "META-INF/SIGNATURE.XML":
+                continue
+            dst.writestr(name, src.read(name))
+        dst.writestr("META-INF/SIGNATURE.XML", signature_xml)
+    src.close()
+
+    return buf.getvalue()

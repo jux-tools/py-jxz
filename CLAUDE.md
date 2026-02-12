@@ -20,7 +20,7 @@ py-jxz implements the `.jxz` container format in Python, providing:
 | `jxz.manifest` | Generate and parse JAR-style `MANIFEST.MF` | builder, reader |
 | `jxz.reader` | Extract, validate, and verify `.jxz` containers | py-juxlib, spooky |
 | `jxz.signing` | XMLDSIG signing and verification (enveloping mode) | builder, reader |
-| `jxz.cli` | CLI subcommands: build, inspect, verify, extract | end users, CI pipelines |
+| `jxz.cli` | CLI subcommands: build, inspect, sign, verify, extract | end users, CI pipelines |
 
 ### Why a Separate Package
 
@@ -36,9 +36,9 @@ py-jxz                          <-- format implementation
 
 ## Current Development Status
 
-- **Completed Sprints**: Sprint 1 (core containers), Sprint 2 (XML signatures), Sprint 3 (API polish & CLI), Sprint 4 (`jxz build` CLI & utilities)
-- **Latest Release**: v0.1.4
-- **Next Milestone**: TBD (Sprint 5)
+- **Completed Sprints**: Sprint 1 (core containers), Sprint 2 (XML signatures), Sprint 3 (API polish & CLI), Sprint 4 (`jxz build` CLI), Sprint 5 (`jxz sign` CLI)
+- **Latest Release**: v0.1.5
+- **Next Milestone**: TBD (Sprint 6)
 
 ## Foundational ADRs
 

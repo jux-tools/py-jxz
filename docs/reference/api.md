@@ -3,7 +3,7 @@
 
 # API Reference
 
-Complete Python API reference for py-jxz v0.1.3.
+Complete Python API reference for py-jxz v0.1.5.
 
 ## ContainerBuilder
 
@@ -225,7 +225,7 @@ Compute SHA-256 hex digest of data.
 ## Signing Functions
 
 ```python
-from jxz import sign_manifest, verify_signature
+from jxz import sign_container, sign_manifest, verify_signature
 ```
 
 ### `sign_manifest(manifest_text: str, private_key: PrivateKey, certificate: Certificate | None = None) -> bytes`
@@ -241,6 +241,25 @@ Sign manifest text using enveloping XMLDSIG. The manifest text is embedded insid
 **Returns**: `SIGNATURE.XML` content as UTF-8 bytes.
 
 **Raises**: `SignatureError` if signing fails or the key type is unsupported.
+
+### `sign_container(data: bytes, private_key: PrivateKey, certificate: Certificate | None = None, *, force: bool = False) -> bytes`
+
+Sign (or re-sign) an existing `.jxz` container. Reads the container, validates digests, signs the manifest, and returns a new container with `META-INF/SIGNATURE.XML` added.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `data` | `bytes` | Complete `.jxz` container bytes |
+| `private_key` | `PrivateKey` | RSA or ECDSA private key |
+| `certificate` | `Certificate \| None` | X.509 certificate to embed in signature |
+| `force` | `bool` | If `True`, allow re-signing an already-signed container |
+
+**Returns**: New `.jxz` container bytes with signature.
+
+**Raises**:
+
+- `SignatureError` if the container is already signed and `force` is `False`.
+- `ContainerStructureError` if the container is invalid.
+- `DigestMismatchError` if digest validation fails.
 
 ### `verify_signature(signature_xml: bytes, manifest_text: str, certificate: Certificate | None = None) -> None`
 

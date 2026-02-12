@@ -64,6 +64,43 @@ jxz build report.xml \
     --timestamp "2026-01-15T10:30:00+00:00"
 ```
 
+## Sign an existing container
+
+Sign an unsigned container in-place:
+
+```bash
+jxz sign report.jxz --key signer.pem
+```
+
+## Sign with a certificate
+
+```bash
+jxz sign report.jxz --key signer.pem --cert signer-cert.pem
+```
+
+## Sign to a different file
+
+```bash
+jxz sign report.jxz --key signer.pem -o signed-report.jxz
+```
+
+## Re-sign a container
+
+Replace an existing signature with a new one:
+
+```bash
+jxz sign signed-report.jxz --key new-key.pem --cert new-cert.pem --force
+```
+
+## Build-then-sign pipeline
+
+Build unsigned in CI, sign separately by a trusted authority:
+
+```bash
+jxz build report.xml --created-by "ci/2.0" --report-type pytest-junit -o report.jxz
+jxz sign report.jxz --key authority.pem --cert authority-cert.pem
+```
+
 ## Inspect a container
 
 Human-readable summary:
@@ -222,6 +259,7 @@ If the `jxz` console script is not on your `PATH`, use the module form:
 
 ```bash
 python -m jxz build report.xml --created-by "tool/1.0" --report-type pytest-junit
+python -m jxz sign report.jxz --key signer.pem
 python -m jxz inspect report.jxz
 python -m jxz verify --json report.jxz
 python -m jxz extract -o output/ report.jxz
