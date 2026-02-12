@@ -1,4 +1,2 @@
-# Test fixtures: self-signed test certificates only
-# These are NOT real credentials - they are disposable test keys
-tests/fixtures/test-private.pem
-tests/fixtures/test-ec-private.pem
+# Test keys are generated programmatically in tests/conftest.py
+# No fixture key files exist in the repository

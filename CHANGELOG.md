@@ -10,6 +10,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-02-12
+
+### Added
+
+- `ContainerReader.get_meta()`: return META-INF extras (excluding MANIFEST.MF and SIGNATURE.XML) as a dict
+- `ContainerReader.get_signature_xml()`: return raw SIGNATURE.XML bytes, or None if unsigned
+- `ContainerReader.created_by` property: producer tool identifier from manifest
+- `ContainerReader.report_type` property: report dialect from manifest
+- `ContainerReader.timestamp` property: parsed ISO 8601 datetime from manifest
+- `python -m jxz` CLI with three subcommands:
+  - `inspect`: display container metadata, file listing, and signature status (human-readable and `--json`)
+  - `verify`: verify container integrity and signatures (`--cert`, `--quiet`, `--json`)
+  - `extract`: extract container contents to disk (`--output`, `--report-only`, `--attachments-only`)
+- `jxz` console script entry point via `[project.scripts]`
+- Optional `cli` extra with `rich>=13.0` for enhanced terminal output
+- CLI test suite covering all three subcommands
+
+## [0.1.2] - 2026-02-12
+
+### Added
+
+- `jxz.signing` module: `sign_manifest()` and `verify_signature()` for XML digital signature creation and verification using signxml (enveloping XMLDSIG with exc-c14n)
+- `ContainerBuilder.build()` now accepts `private_key` and `certificate` parameters to produce signed containers with `META-INF/SIGNATURE.XML`
+- `ContainerReader.is_signed` property to check for signature presence
+- `ContainerReader.verify()` method: validates signature (if present) then digests, following spec verification order
+- Support for both RSA-SHA256 and ECDSA-SHA256 signature algorithms (auto-detected from key type)
+- Signing and verification test suite with programmatic key/certificate generation
+
+## [0.1.1] - 2026-02-12
+
+### Added
+
+- `jxz.manifest` module: `Manifest` dataclass, `generate()`, `parse()`, `compute_digest()` for JAR-style manifest handling
+- `jxz.builder` module: `ContainerBuilder` class for assembling unsigned `.jxz` containers from JUnit XML reports, attachments, and metadata
+- `jxz.reader` module: `ContainerReader` class for extracting and validating `.jxz` containers with SHA-256 digest verification
+- Public API exports: `ContainerBuilder`, `ContainerReader`, `Manifest`, and all error classes
+- Comprehensive test suite: unit tests for manifest, builder, reader; integration round-trip tests
+- Path traversal (ZIP slip) protection in both builder and reader
+
 ## [0.1.0] - 2026-02-12
 
 ### Added

@@ -22,8 +22,7 @@ class DigestMismatchError(JxzError):
         self.expected = expected
         self.actual = actual
         super().__init__(
-            f"Digest mismatch for {entry_name}: "
-            f"expected {expected}, got {actual}"
+            f"Digest mismatch for {entry_name}: expected {expected}, got {actual}"
         )
 
 
