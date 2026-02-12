@@ -1,0 +1,4 @@
+# Test fixtures: self-signed test certificates only
+# These are NOT real credentials - they are disposable test keys
+tests/fixtures/test-private.pem
+tests/fixtures/test-ec-private.pem
