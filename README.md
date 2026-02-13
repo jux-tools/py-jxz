@@ -5,7 +5,7 @@
 
 Python library for building, reading, and verifying `.jxz` signed containers.
 
-The `.jxz` format packages signed JUnit XML test reports with attachments for secure transmission, as specified by the [jux-container-format](https://github.com/jrjsmrtn/jux-container-format) specification.
+The `.jxz` format packages signed JUnit XML test reports with attachments for secure transmission, as specified by the [jux-container-format](https://github.com/jux-tools/jux-container-format) specification.
 
 ## Features
 
@@ -52,16 +52,16 @@ attachments = reader.get_attachments()
 
 ## Documentation
 
-- [Format Specification](https://github.com/jrjsmrtn/jux-container-format)
+- [Format Specification](https://github.com/jux-tools/jux-container-format)
 - [Changelog](CHANGELOG.md)
 
 ## Related Projects
 
 | Project | Description |
 |---------|-------------|
-| [jux-container-format](https://github.com/jrjsmrtn/jux-container-format) | `.jxz` format specification |
-| [py-juxlib](https://github.com/jrjsmrtn/py-juxlib) | Jux client library (depends on py-jxz) |
-| [jux-openapi](https://github.com/jrjsmrtn/jux-openapi) | Jux REST API specification |
+| [jux-container-format](https://github.com/jux-tools/jux-container-format) | `.jxz` format specification |
+| [py-juxlib](https://github.com/jux-tools/py-juxlib) | Jux client library (depends on py-jxz) |
+| [jux-openapi](https://github.com/jux-tools/jux-openapi) | Jux REST API specification |
 
 ## License
 
