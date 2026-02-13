@@ -68,7 +68,7 @@ jobs:
           echo "hashes=$(sha256sum * | base64 -w0)" >> "$GITHUB_OUTPUT"
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: python-package-distributions
           path: dist/
@@ -116,7 +116,7 @@ jobs:
             python -c "import sys, json; data=json.load(sys.stdin); print(f\"Total components: {len(data.get('components', []))}\"); [print(f\"  - {c['name']} {c.get('version', 'N/A')}\") for c in data.get('components', [])[:10]]"
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: sbom
           path: "py-jxz-${{ needs.build.outputs.version }}-sbom.cdx.json"
