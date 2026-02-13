@@ -7,7 +7,7 @@
  * Python library for building, reading, and verifying .jxz signed containers.
  * This model covers the library itself and its consumers.
  *
- * Version: 0.1.3
+ * Version: 0.1.5
  * Format Specification: See jux-container-format/specs/v1/jxz-format.md
  */
 
@@ -16,7 +16,7 @@ workspace "py-jxz" "Python library for building, reading, and verifying .jxz sig
     model {
         # People
         developer = person "Developer" "Builds or verifies .jxz containers programmatically"
-        cliUser = person "CLI User" "Inspects, verifies, or extracts .jxz containers from the command line"
+        cliUser = person "CLI User" "Builds, inspects, signs, verifies, or extracts .jxz containers from the command line"
 
         # External Systems
         pyJuxlib = softwareSystem "py-juxlib" "Client library that enriches JUnit XML reports with metadata" "External System"
@@ -44,18 +44,21 @@ workspace "py-jxz" "Python library for building, reading, and verifying .jxz sig
                 digestComputer = component "compute_digest()" "Computes SHA-256 hex digest" "Python function"
             }
 
-            signingContainer = container "Signing" "XMLDSIG signing and verification using signxml" "Python module (signing.py)" {
+            signingContainer = container "Signing" "XMLDSIG signing/verification and container-level signing" "Python module (signing.py)" {
                 signFunction = component "sign_manifest()" "Signs manifest text using enveloping XMLDSIG (RSA-SHA256 or ECDSA-SHA256)" "Python function"
                 verifyFunction = component "verify_signature()" "Verifies SIGNATURE.XML against manifest text" "Python function"
+                signContainerFn = component "sign_container()" "Signs or re-signs an existing .jxz container with digest validation" "Python function"
             }
 
             errorsContainer = container "Errors" "JxzError exception hierarchy" "Python module (errors.py)" "Supporting"
 
-            cliContainer = container "CLI" "Command-line interface: inspect, verify, extract subcommands" "Python package (cli/)" "CLI" {
+            cliContainer = container "CLI" "Command-line interface: build, inspect, sign, verify, extract subcommands" "Python package (cli/)" "CLI" {
+                buildCmd = component "build" "Assembles .jxz containers from report, attachments, and metadata files" "Python module (build.py)"
                 inspectCmd = component "inspect" "Displays container metadata and file inventory (human-readable or JSON)" "Python module (inspect.py)"
+                signCmd = component "sign" "Signs or re-signs existing .jxz containers" "Python module (sign.py)"
                 verifyCmd = component "verify" "Verifies container integrity and signatures" "Python module (verify.py)"
                 extractCmd = component "extract" "Extracts container contents to disk after digest validation" "Python module (extract.py)"
-                cliUtils = component "CLI Utilities" "Shared helpers: format_size(), load_certificate()" "Python module (__init__.py)"
+                cliUtils = component "CLI Utilities" "Shared helpers: format_size(), load_certificate(), load_private_key()" "Python module (__init__.py)"
             }
         }
 
@@ -70,14 +73,16 @@ workspace "py-jxz" "Python library for building, reading, and verifying .jxz sig
         developer -> pyJxz "Builds and verifies containers" "Python API"
         developer -> builderContainer "Builds containers" "Python API"
         developer -> readerContainer "Reads and verifies containers" "Python API"
-        cliUser -> cliContainer "Runs CLI commands" "jxz inspect|verify|extract"
+        cliUser -> cliContainer "Runs CLI commands" "jxz build|inspect|sign|verify|extract"
 
-        # Relationships - Container level (for dynamic views)
+        # Relationships - Container level
         builderContainer -> manifestContainer "Computes digests, generates manifest"
         builderContainer -> signingContainer "Signs manifest (optional)"
         readerContainer -> manifestContainer "Parses manifest, validates digests"
         readerContainer -> signingContainer "Verifies signature (if signed)"
+        cliContainer -> builderContainer "Builds containers (jxz build)"
         cliContainer -> readerContainer "Opens and processes containers"
+        cliContainer -> signingContainer "Signs containers (jxz sign)"
 
         # Relationships - Builder internals
         containerBuilder -> pathValidator "Validates attachment/meta names"
@@ -90,9 +95,17 @@ workspace "py-jxz" "Python library for building, reading, and verifying .jxz sig
         containerReader -> digestComputer "Validates digests"
         containerReader -> verifyFunction "Verifies signature (if signed)"
 
-        # Relationships - CLI to Reader
+        # Relationships - Signing internals
+        signContainerFn -> containerReader "Validates container digests"
+        signContainerFn -> signFunction "Signs manifest"
+
+        # Relationships - CLI to modules
+        buildCmd -> containerBuilder "Assembles container"
+        buildCmd -> cliUtils "Loads key/certificate"
         inspectCmd -> containerReader "Opens and inspects container"
         inspectCmd -> cliUtils "Formats output"
+        signCmd -> signContainerFn "Signs container"
+        signCmd -> cliUtils "Loads key/certificate"
         verifyCmd -> containerReader "Verifies container"
         verifyCmd -> cliUtils "Loads certificate"
         extractCmd -> containerReader "Reads and validates container"
@@ -126,7 +139,7 @@ workspace "py-jxz" "Python library for building, reading, and verifying .jxz sig
         component cliContainer "CLIComponents" {
             include *
             autolayout tb
-            description "CLI subcommands: inspect, verify, extract"
+            description "CLI subcommands: build, inspect, sign, verify, extract"
         }
 
         dynamic pyJxz "BuildFlow" "Container build workflow" {
@@ -141,6 +154,13 @@ workspace "py-jxz" "Python library for building, reading, and verifying .jxz sig
             readerContainer -> manifestContainer "2. Parse MANIFEST.MF"
             readerContainer -> signingContainer "3. Verify signature (if signed)"
             readerContainer -> manifestContainer "4. Validate file digests"
+            autolayout lr
+        }
+
+        dynamic pyJxz "SignFlow" "Container signing workflow" {
+            cliUser -> cliContainer "1. jxz sign container.jxz --key key.pem"
+            cliContainer -> signingContainer "2. sign_container() validates then signs"
+            signingContainer -> readerContainer "3. Validate existing digests, then sign manifest"
             autolayout lr
         }
 
