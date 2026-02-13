@@ -21,6 +21,8 @@ Example usage:
 
 from __future__ import annotations
 
+from importlib.metadata import metadata as _metadata
+
 from jxz.builder import ContainerBuilder
 from jxz.errors import (
     ContainerStructureError,
@@ -34,7 +36,10 @@ from jxz.manifest import Manifest
 from jxz.reader import ContainerReader
 from jxz.signing import sign_container, sign_manifest, verify_signature
 
-__version__ = "0.1.5"
+_meta = _metadata("py-jxz")
+__version__ = _meta["Version"]
+__author__ = _meta["Author-email"].split("<")[0].strip()
+__email__ = _meta["Author-email"].split("<")[1].rstrip(">")
 
 __all__ = [
     "ContainerBuilder",

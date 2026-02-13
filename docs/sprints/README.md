@@ -19,6 +19,7 @@ This directory contains sprint planning and retrospective documents for py-jxz.
 | 3 | v0.1.3 | 2026-02-12 | Done | [plan](sprint-03-plan.md) | [retro](sprint-03-retrospective.md) |
 | 4 | v0.1.4 | 2026-02-12 | Done | [plan](sprint-04-plan.md) | [retro](sprint-04-retrospective.md) |
 | 5 | v0.1.5 | 2026-02-12 | Done | [plan](sprint-05-plan.md) | [retro](sprint-05-retrospective.md) |
+| 6 | v0.1.6 | — | Proposed | [proposal](sprint-06-proposal.md) | — |
 
 ## Roadmap Summary
 
@@ -29,6 +30,7 @@ This directory contains sprint planning and retrospective documents for py-jxz.
 | 3 | API polish & CLI tooling | reader accessors, inspect/verify/extract |
 | 4 | `jxz build` CLI & utilities | build subcommand, load_private_key |
 | 5 | `jxz sign` CLI & library | sign subcommand, sign_container() |
+| 6 | File-backed I/O | path-based builder, from_file reader, file-to-file signing |
 
 ## Story Point Reference
 
