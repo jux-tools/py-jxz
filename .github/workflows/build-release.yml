@@ -137,50 +137,39 @@ jobs:
       provenance-name: "py-jxz-${{ needs.build.outputs.version }}.intoto.jsonl"
       private-repository: true
 
-  # NOTE: PyPI Trusted Publishing not yet configured.
-  # Uncomment this job after creating the PyPI project and configuring
-  # the trusted publisher in PyPI settings.
-  #
-  # publish-pypi:
-  #   name: Publish to PyPI
-  #   needs: [build, provenance]
-  #   runs-on: ubuntu-latest
-  #   environment:
-  #     name: pypi
-  #     url: https://pypi.org/p/py-jxz
-  #   permissions:
-  #     id-token: write
-  #     contents: read
-  #
-  #   steps:
-  #     - name: Download distributions
-  #       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-  #       with:
-  #         name: python-package-distributions
-  #         path: dist/
-  #
-  #     - name: Download provenance
-  #       uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-  #       with:
-  #         name: ${{ needs.provenance.outputs.provenance-name }}
-  #         path: dist/
-  #
-  #     - name: Remove non-distribution files before PyPI upload
-  #       run: |
-  #         rm -f dist/checksums.txt
-  #         rm -f dist/*.intoto.jsonl
-  #         echo "Files to be uploaded to PyPI:"
-  #         ls -lh dist/
-  #
-  #     - name: Publish to PyPI with attestations
-  #       uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
-  #       with:
-  #         attestations: true
-  #         print-hash: true
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [build, provenance]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/py-jxz
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Remove non-distribution files before PyPI upload
+        run: |
+          rm -f dist/checksums.txt
+          echo "Files to be uploaded to PyPI:"
+          ls -lh dist/
+
+      - name: Publish to PyPI with attestations
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
+        with:
+          attestations: true
+          print-hash: true
 
   create-release:
     name: Create GitHub Release
-    needs: [build, sbom, provenance]
+    needs: [build, sbom, provenance, publish-pypi]
     runs-on: ubuntu-latest
     permissions:
       contents: write
