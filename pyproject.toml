@@ -39,7 +39,7 @@ classifiers = [
 ]
 dependencies = [
     "signxml>=4.0",
-    "cryptography>=42.0",
+    "cryptography>=46.0.5",  # CVE-2026-26007
 ]
 
 [project.optional-dependencies]

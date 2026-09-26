@@ -74,7 +74,6 @@ ipython_config.py
 Pipfile.lock
 
 # UV
-uv.lock
 
 # PEP 582
 __pypackages__/

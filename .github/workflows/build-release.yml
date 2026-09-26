@@ -26,6 +26,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Set up Python
@@ -35,6 +36,9 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          # No cache in a release workflow: a poisoned cache could reach a published artifact.
+          enable-cache: false
 
       - name: Install build dependencies
         run: |
@@ -51,6 +55,12 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
           VERSION="${VERSION#v}"
+          # Refuse anything that is not a version: this value is expanded into
+          # later scripts through the step output.
+          if ! [[ "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::not a version: $VERSION"
+            exit 1
+          fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Building version: ${VERSION}"
 
@@ -85,6 +95,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -93,6 +105,9 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          # No cache in a release workflow: a poisoned cache could reach a published artifact.
+          enable-cache: false
 
       - name: Install cyclonedx-bom
         run: |
@@ -130,7 +145,9 @@ jobs:
       actions: read
       id-token: write
       contents: write
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    # Referenced by tag on purpose: slsa-verifier checks the builder's ref, and the generator's
+    # README requires @vX.Y.Z (hash pinning is slsa-framework/slsa-verifier#12).
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0 # zizmor: ignore[unpinned-uses]
     with:
       base64-subjects: "${{ needs.build.outputs.hashes }}"
       upload-assets: false
@@ -178,6 +195,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Download distributions
@@ -207,6 +225,12 @@ jobs:
             VERSION="${INPUT_TAG}"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          # Refuse anything that is not a version: this value is expanded into
+          # later scripts through the step output.
+          if ! [[ "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.]+)?$ ]]; then
+            echo "::error::not a version: $VERSION"
+            exit 1
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 

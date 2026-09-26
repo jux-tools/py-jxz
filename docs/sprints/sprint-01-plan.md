@@ -42,9 +42,15 @@ Source of truth: `../jux-container-format/specs/v1/jxz-format.md` and `manifest-
 ```python
 class ContainerBuilder:
     def set_report(self, data: bytes) -> None: ...
-    def add_attachment(self, name: str, data: bytes, *, attachment_for: str | None = None) -> None: ...
-    def add_meta(self, name: str, data: bytes) -> None: ...  # e.g., pytest-metadata.json
-    def build(self, *, created_by: str, report_type: str, timestamp: datetime | None = None) -> bytes: ...
+    def add_attachment(
+        self, name: str, data: bytes, *, attachment_for: str | None = None
+    ) -> None: ...
+    def add_meta(
+        self, name: str, data: bytes
+    ) -> None: ...  # e.g., pytest-metadata.json
+    def build(
+        self, *, created_by: str, report_type: str, timestamp: datetime | None = None
+    ) -> bytes: ...
 ```
 
 **`build()` logic** (per spec signing process, minus step 4):
@@ -77,10 +83,14 @@ class ContainerBuilder:
 **Class: `ContainerReader`**
 ```python
 class ContainerReader:
-    def __init__(self, data: bytes) -> None: ...  # raises ContainerStructureError if not valid ZIP or missing required entries
+    def __init__(
+        self, data: bytes
+    ) -> None: ...  # raises ContainerStructureError if not valid ZIP or missing required entries
     def get_manifest(self) -> Manifest: ...
     def get_report(self) -> bytes: ...
-    def get_attachments(self) -> dict[str, bytes]: ...  # keys are paths relative to attachments/
+    def get_attachments(
+        self,
+    ) -> dict[str, bytes]: ...  # keys are paths relative to attachments/
     def list_entries(self) -> list[str]: ...
     def validate(self) -> None: ...  # digest validation; raises DigestMismatchError
 ```

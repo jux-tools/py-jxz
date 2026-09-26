@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -30,25 +32,32 @@ jobs:
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
 
       - name: Install dependencies
+        run: uv sync --locked --all-extras
+
+      # Audit the locked dependency set, not the runner's Python: that also
+      # holds the toolchain's own packages, and py-jxz itself at a version
+      # not yet on PyPI, which always fails --strict.
+      - name: Export locked dependencies
         run: |
-          uv pip install --system -e ".[dev]"
+          uv export --locked --no-hashes --no-emit-project --all-extras \
+            --output-file locked-requirements.txt
 
       - name: Run pip-audit (PyPA Official)
         run: |
-          uv pip install --system pip-audit
           # Generate JSON report for artifact
-          pip-audit --desc --format json --output pip-audit-report.json || true
+          uvx pip-audit --no-deps --disable-pip -r locked-requirements.txt \
+            --desc --format json --output pip-audit-report.json || true
           # Run with human-readable output and fail on vulnerabilities
           echo "Running pip-audit with vulnerability detection..."
-          pip-audit --desc --strict || {
+          uvx pip-audit --no-deps --disable-pip -r locked-requirements.txt --desc --strict || {
             echo "::warning::pip-audit found vulnerabilities in dependencies"
             exit 1
           }
 
       - name: Run Ruff Security Rules
         run: |
-          ruff check --select S --output-format json src/jxz/ > ruff-security-report.json || true
-          ruff check --select S src/jxz/
+          uv run ruff check --select S --output-format json src/jxz/ > ruff-security-report.json || true
+          uv run ruff check --select S src/jxz/
         continue-on-error: true
 
       - name: Upload pip-audit report
@@ -73,6 +82,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Dependency Review
         uses: actions/dependency-review-action@3c4e3dcb1aa7874d2c16be7d79418e9b7efd6261 # v4
@@ -90,9 +101,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
+      # v0.36.0 installs Trivy v0.70.0. The previous pin defaulted to Trivy
+      # v0.68.1, whose GitHub release no longer exists, so installation failed.
       - name: Run Trivy vulnerability scanner (SARIF)
-        uses: aquasecurity/trivy-action@22438a435773de8c97dc0958cc0b823c45b064ac # master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -101,7 +116,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Run Trivy vulnerability scanner (Table)
-        uses: aquasecurity/trivy-action@22438a435773de8c97dc0958cc0b823c45b064ac # master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -131,6 +146,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -140,13 +157,16 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
 
-      - name: Install cyclonedx-bom
+      # The SBOM and its audit read the same file: the runtime dependencies as
+      # locked, which is what a user installing py-jxz would get.
+      - name: Export locked runtime dependencies
         run: |
-          uv pip install --system cyclonedx-bom
+          uv export --locked --no-hashes --no-emit-project --no-dev \
+            --output-file runtime-requirements.txt
 
       - name: Generate SBOM
         run: |
-          cyclonedx-py requirements /dev/null \
+          uvx --from cyclonedx-bom cyclonedx-py requirements runtime-requirements.txt \
             --pyproject pyproject.toml \
             --of JSON \
             --output-file py-jxz-sbom.cdx.json
@@ -170,8 +190,7 @@ jobs:
 
       - name: Audit dependencies from SBOM
         run: |
-          uv pip install --system pip-audit
-          pip-audit --desc --strict
+          uvx pip-audit --no-deps --disable-pip -r runtime-requirements.txt --desc --strict
 
       - name: Upload SBOM artifact
         if: always()
@@ -187,6 +206,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -197,13 +218,12 @@ jobs:
         uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
 
       - name: Install dependencies
-        run: |
-          uv pip install --system -e ".[dev]"
+        run: uv sync --locked --all-extras
 
       - name: Run security tests
         run: |
           if [ -d "tests/security" ]; then
-            pytest tests/security/ -v --tb=short --no-cov
+            uv run pytest tests/security/ -v --tb=short --no-cov
           else
             echo "No security tests found - skipping"
           fi
@@ -232,7 +252,9 @@ jobs:
           persist-credentials: false
 
       - name: Run OpenSSF Scorecard
-        uses: ossf/scorecard-action@62b2cac7ed8198b15735ed49ab1e5cf35480ba46 # v2.4.0
+        # v2.4.4 pulls its image from ghcr.io; v2.4.0's gcr.io/openssf image is
+        # refused (billing disabled on the OpenSSF project that hosts it).
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
         with:
           results_file: scorecard-results.sarif
           results_format: sarif

@@ -13,7 +13,9 @@ A minimal container requires a JUnit XML report, a creator identifier, and a rep
 from jxz import ContainerBuilder
 
 builder = ContainerBuilder()
-builder.set_report(b'<testsuites><testsuite name="suite" tests="1"><testcase name="test_pass"/></testsuite></testsuites>')
+builder.set_report(
+    b'<testsuites><testsuite name="suite" tests="1"><testcase name="test_pass"/></testsuite></testsuites>'
+)
 
 jxz_bytes = builder.build(
     created_by="my-tool/1.0",
@@ -98,9 +100,11 @@ private_key = rsa.generate_private_key(
 )
 
 # Create self-signed certificate
-subject = issuer = x509.Name([
-    x509.NameAttribute(NameOID.COMMON_NAME, "Test Signer"),
-])
+subject = issuer = x509.Name(
+    [
+        x509.NameAttribute(NameOID.COMMON_NAME, "Test Signer"),
+    ]
+)
 certificate = (
     x509.CertificateBuilder()
     .subject_name(subject)

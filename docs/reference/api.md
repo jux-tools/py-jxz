@@ -188,7 +188,7 @@ from jxz import Manifest
 ```python
 @dataclass
 class Manifest:
-    main: dict[str, str]           # Main section key-value pairs
+    main: dict[str, str]  # Main section key-value pairs
     entries: list[dict[str, str]]  # Per-file entry sections
 ```
 

@@ -91,9 +91,9 @@ The manifest's main section fields are exposed as properties:
 ```python
 reader = ContainerReader(data)
 
-print(reader.created_by)   # e.g. "pytest-jux/0.1.0"
+print(reader.created_by)  # e.g. "pytest-jux/0.1.0"
 print(reader.report_type)  # e.g. "pytest-junit"
-print(reader.timestamp)    # datetime object (parsed from ISO 8601)
+print(reader.timestamp)  # datetime object (parsed from ISO 8601)
 ```
 
 ## Access the full manifest
