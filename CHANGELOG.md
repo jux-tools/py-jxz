@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-09-26
+
 ### Security
 
 - Require `cryptography>=46.0.5` (was `>=42.0`) so an install can no longer resolve a version
