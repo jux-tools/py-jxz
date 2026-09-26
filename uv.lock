@@ -904,7 +904,7 @@ wheels = [
 
 [[package]]
 name = "py-jxz"
-version = "0.1.7"
+version = "0.1.8"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
