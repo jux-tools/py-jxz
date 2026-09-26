@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-jxz"
-version = "0.1.6"
+version = "0.1.7"
 description = "Python library for building, reading, and verifying .jxz signed containers"
 readme = "README.md"
 license = "Apache-2.0"
@@ -39,7 +39,7 @@ classifiers = [
 ]
 dependencies = [
     "signxml>=4.0",
-    "cryptography>=42.0",
+    "cryptography>=46.0.5",  # CVE-2026-26007
 ]
 
 [project.optional-dependencies]

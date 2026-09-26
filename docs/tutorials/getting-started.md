@@ -125,9 +125,11 @@ private_key = rsa.generate_private_key(
 )
 
 # Create a self-signed certificate
-subject = issuer = x509.Name([
-    x509.NameAttribute(NameOID.COMMON_NAME, "Tutorial Signer"),
-])
+subject = issuer = x509.Name(
+    [
+        x509.NameAttribute(NameOID.COMMON_NAME, "Tutorial Signer"),
+    ]
+)
 certificate = (
     x509.CertificateBuilder()
     .subject_name(subject)

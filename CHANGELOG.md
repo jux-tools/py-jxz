@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-09-26
+
+### Security
+
+- Require `cryptography>=46.0.5` (was `>=42.0`) so an install can no longer resolve a version
+  affected by CVE-2026-26007 (GHSA-r6ph-v2qm-q3c2), a subgroup attack on SECT curves caused by
+  missing subgroup validation
+- CI: `persist-credentials: false` on every `actions/checkout` (zizmor `artipacked`)
+- Release workflow: disable `setup-uv` caching (zizmor `cache-poisoning`); reject any version that
+  is not `[v]X.Y.Z[-suffix]` before it reaches a step output that later scripts expand; upgrade
+  the SLSA generic generator to v2.1.0, kept referenced by tag as slsa-verifier requires
+- Refresh the lockfile (26 packages)
+
+### Fixed
+
+- CI: track `uv.lock` and install with `uv sync --locked`, so CI runs the tool versions that were
+  tested locally; ruff 0.16 formats Python code blocks in Markdown, so five docs are reformatted
+- Security Scanning: audit the locked dependency set instead of the runner's Python, which held
+  the toolchain's own packages and py-jxz itself (not on PyPI at the version being built, so
+  `pip-audit --strict` could not pass); the SBOM job builds the SBOM from the locked runtime
+  requirements and audits that same file
+- Security Scanning: pin `aquasecurity/trivy-action` to v0.36.0 (Trivy v0.70.0), whose release
+  exists, and `ossf/scorecard-action` to v2.4.4, whose image is on ghcr.io
+
 ## [0.1.6] - 2026-02-13
 
 ### Added
